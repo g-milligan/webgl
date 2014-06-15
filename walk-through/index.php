@@ -118,7 +118,8 @@
                         $firstClass='';
                         if($_stepNum==1){$firstClass='first ';}
                         //print the step item
-                        echo '<li class="'.$firstClass.'step"><a href="#step'.$_stepNum.'">'.$_step['title'].'</a><span class="bar"><span class="arrow"></span></span></li>';
+                        echo '<li class="'.$firstClass.'step"><a href="#step'.$_stepNum.'">'.$_step['title']
+                            .'</a><span class="bar"><span class="arrow"></span></span></li>';
                         $_stepNum++;
                     }
                 ?>

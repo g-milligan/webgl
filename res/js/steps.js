@@ -40,7 +40,8 @@ jQuery(document).ready(function(s){
 			//return the step number
 			return stepNum;
 		};
-		var setProgressBarStep=function(stepNum){
+		//function only used inside alignProgressBarWithScroll
+		var setProgressBarStep=function(stepNum, progPercent){
 			//make sure to get the step number integer, if a target string was passed as stepNum
 			var stepNum=getStepNumFromTarget(stepNum);
 			//if a valid step number was passed
@@ -101,9 +102,13 @@ jQuery(document).ready(function(s){
 				};
 				//starting step slider animation
 				stepsUl.addClass('animation');
+				//remove the current step class (only the current step gets this class)
+				stepElems.removeClass('current');
 				//get some key step nav items
 				var clickedStepElem=stepElems.filter(':eq('+(stepNum-1)+')');
 				var lastProgressElem=stepElems.filter('.progress:last');
+				//add the current class
+				clickedStepElem.addClass('current');
 				//if not clicked first step
 				if(stepNum>1){
 					//get previous step li
@@ -234,6 +239,33 @@ jQuery(document).ready(function(s){
 				});
 				return {'prev':prevAnchAboveHud,'next':nextAnchBelowHud};
 			};
+			//calculate how much additional progress, beyond the start of the current step, has been made
+			var getCurrentStepPercent=function(){
+				//get the two anchors closest to the hud's bottom edge; one below and one above this edge
+				var anchors=getPrevAndNextAnchors();
+				//calculate how much additional progress, beyond the start of the current step, has been made
+				var progPercent=0;
+				//note, anchors.next is the current active step's anchor element
+				if(anchors.next!=undefined){
+					//get the step wrap offset and height
+					var stepWrap=anchors.next.parent();
+					var stepWrapHeight=stepWrap.outerHeight();
+					var stepWrapOffsetTop=stepWrap.offset().top;
+					//get the offset bottom of the #hud
+					var hudOffsetBottom = hudWrap.offset().top + hudWrap.outerHeight();
+					//if the bottom of the hud is after the top of the stepWrap
+					if(hudOffsetBottom>stepWrapOffsetTop){
+						//how many pixels did the hud overlap the stepWrap?
+						var hudOverlap=hudOffsetBottom-stepWrapOffsetTop;
+						//calculate % that the hud has scrolled over the stepWrap
+						var progPercent = hudOverlap / stepWrapHeight;
+						progPercent *= 100;
+						//round to the nearest integer
+						Math.floor(progPercent);
+					}
+				}
+				return progPercent;
+			};
 			//check if the progress bar is aligned with the current scroll position
 			var progressBarIsAligned=function(){
 				var isAligned=true;
@@ -258,6 +290,20 @@ jQuery(document).ready(function(s){
 					//if the prev nav item DOESN't have progress (it should)
 					if(prevNavItem!=undefined&&!prevNavItem.hasClass('progress')){
 						isAligned=false;
+					}else{
+						//the top-level steps ARE aligned, now check percentage of current step...
+						//if there is a nextNavItem
+						if(nextNavItem!=undefined){
+							//get the current percentage
+							var progPercent = getCurrentStepPercent();
+							//check to see if the progress bar already has this percentage
+							var progBar=nextNavItem.find('.bar:last');
+							var progBarPerc=parseInt(progBar.css('width'));
+							//if the progress bar width differs from the percentage
+							if(progPercent!=progBarPerc){
+								isAligned=false;
+							}
+						}
 					}
 				}
 				return isAligned;
@@ -272,13 +318,15 @@ jQuery(document).ready(function(s){
 						if(!stepsUl.hasClass('animation')){
 							//get the two anchors closest to the hud's bottom edge; one below and one above this edge
 							var anchors=getPrevAndNextAnchors();
+							//calculate how much additional progress, beyond the start of the current step, has been made
+							progPercent=getCurrentStepPercent();
 							//move up to the next anchor
 							if(anchors.next!=undefined){
-								setProgressBarStep(anchors.next.attr('name'),false);
+								setProgressBarStep(anchors.next.attr('name'),progPercent); //*** set progress bar to progPercent % width inside this function
 							}else{
 								//move up to the prev anchor
 								if(anchors.prev!=undefined){
-									setProgressBarStep(anchors.prev.attr('name'),false);
+									setProgressBarStep(anchors.prev.attr('name'),progPercent);
 								}
 							}
 							//get the longer animation duration time (scroll animation or progress bar animation)
