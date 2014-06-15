@@ -75,9 +75,12 @@
             //for each step
             $_stepNum=1;
             foreach($_steps as $_step){
+                //get the level of this step
+                $stepLevels=explode('_', $anchorStr);
+                $levelCount=count($stepLevels);
                 //print step html
-                $html.='<div class="step-wrap">';
-                $html.='<a class="anchor" name="'.$anchorStr.$_stepNum.'"></a>';
+                $html.='<div class="step-wrap level'.$levelCount.'">';
+                $html.='<a class="anchor level'.$levelCount.'" name="'.$anchorStr.$_stepNum.'"></a>';
                 $html.='<h1 class="step-title">'.$_step['title'].'</h1>';
                 $html.='<div class="step-body">';
                 //***

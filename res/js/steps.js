@@ -29,7 +29,7 @@ jQuery(document).ready(function(s){
 	  		}
 	  		//if there is an <a> element for this #target
 	  		if (targetElem.length) {
-	  			//GET THE TOP-LEVEL STEP NUMBER FROM target
+	  			//GET THE TOP-LEVEL STEP NUMBER FROM target, #step{num}...
 	  			//get the step #
 				var stepNum=-1;
 				if(target.indexOf('step')==0){
@@ -44,7 +44,7 @@ jQuery(document).ready(function(s){
 				}
 				//if there is a step number
 				if(stepNum>0){
-					//SHOW SLIDE PROGRESS ANIMATION TO THE TARGET STEP
+					//SHOW SLIDE PROGRESS ANIMATION (IN THE NAV) TO THE TARGET STEP
 					var animDelay=200;
 					var backTrack=function(stopBeforeLi){
 						//if stopBeforeLi still has progress
@@ -134,7 +134,7 @@ jQuery(document).ready(function(s){
 						if(animateScroll){
 							stepsUl.addClass('scrolling');
 							//animate
-							jQuery('html,body').animate({
+							jQuery('html,body#body').animate({
 			          			scrollTop: targetElem.offset().top
 			        		}, 800, function(){
 			        			stepsUl.removeClass('scrolling');
@@ -166,6 +166,45 @@ jQuery(document).ready(function(s){
 					}
 				}
 			}
+		});
+		//WINDOW RESIZE
+		jQuery(window).ready(function(){
+			var hudWrap=jQuery('#hud:last');
+			//function for every window resize
+			var windowResize=function(){
+				//window height
+				var viewHeight = window.outerHeight;
+				//if there is a step wrap in the body
+				var lastWrap=jQuery('#body > .step-wrap:last');
+				if(lastWrap.length>0){
+					//set the min height of last element so that the anchor scrolling can scroll to each item 
+					lastWrap.css('min-height',viewHeight+'px');
+				}
+			};
+			//on window resize
+			jQuery(window).resize(function(){
+				//resize function onresize
+				windowResize();
+			});
+			//resize function onload
+			windowResize();
+			//WINDOW SCROLL
+			var scroll_timeout;
+			jQuery(window).scroll(function(){
+				//wait for scroll end
+				clearTimeout(scroll_timeout);
+				scroll_timeout = setTimeout(function(){
+					//get the offset bottom of the #hud
+					var hudOffsetBottom = hudWrap.offset().top;
+					hudOffsetBottom += hudWrap.outerHeight();
+					//get the anchors
+					var level1Anchs=jQuery('a[name].anchor.level1');
+					//for each level1 anchor
+					level1Anchs.each(function(){
+						//***
+					});
+				},100);
+			});
 		});
 	}
 });
