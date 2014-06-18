@@ -149,7 +149,6 @@ jQuery(document).ready(function(s){
 			//if a valid step number was passed
 			if(stepNum>0){
 				//SHOW SLIDE PROGRESS ANIMATION (IN THE NAV) TO THE TARGET STEP
-				//=====================================
 				var backPartStep=function(currentLi){
 					var movePartStep=false;
 					//if the progress bar needs to be updated
@@ -167,23 +166,62 @@ jQuery(document).ready(function(s){
 						setTimeout(function(){
 							//indicate the animation finished
 							stepsUl.removeClass('animation');
+							//if did NOT have to re-align again (catch up with quick-scrolling)
+							if(!stepsUl.alignProgressBarWithScroll()){
+								//indicate the animation is caught up with quick-scrolling
+								stepsUl.addClass('ready');
+							}
 						},animDelay);
 					}else{
-						//show the next step's arrow (show arrow = NOT done) //***
-						currentLi.prev('li:first').removeClass('done');
-						//indicate the animation finished
-						stepsUl.removeClass('animation');
+						//no partial width needed for the current step; just backtrack the whole step...
+						
+						//remove the progress from current step
+						currentLi.addClass('back-track');
+						currentLi.removeClass('progress');
+						//remove partial width (if any)
+						currentLi.children('.bar:last').css('width','');
+						//wait for animation to finish
+						setTimeout(function(){
+							//hide the current step's arrow
+							currentLi.removeClass('back-track');
+							//show the previous step's arrow (show arrow = NOT done)
+							currentLi.prev('li:first').removeClass('done');
+							//indicate the animation finished
+							stepsUl.removeClass('animation');
+							//if did NOT have to re-align again (catch up with quick-scrolling)
+							if(!stepsUl.alignProgressBarWithScroll()){
+								//indicate the animation is caught up with quick-scrolling
+								stepsUl.addClass('ready');
+							}
+						},animDelay);
 					}
 					return movePartStep;
 				};
-				//=====================================
 				var backStep=function(stopBeforeLi){
-					//if stopBeforeLi still has progress ***
-					if(stopBeforeLi.hasClass('progress')){
+					//if there is a last partial bar that shows incomplete
+					var lastPartialBar=stepsUl.find('.bar[style*="width:"]:last');
+					if(lastPartialBar!=undefined && lastPartialBar.length>0){
+						//move the arrow to the start of the step (back from partial width)
+						lastPartialBar.css('width','0%');
+						//wait for the lastPartialBar animation to complete
+						setTimeout(function(){
+							//get the li parent of the bar
+							var lastPartialLi=lastPartialBar.parent();
+							//remove the progress indicator from this step
+							lastPartialLi.removeClass('progress');
+							//remove the partial width from lastPartialBar
+							lastPartialBar.css('width','');
+							//recursive backward move
+							backStep(stopBeforeLi);
+						},animDelay);
+					}else{
+						//no last partial progress bar left incomplete...
+						
 						//get the last li that has progress
 						var nextBacktrack=stepsUl.children('li.progress:last');
+						//show the arrow on the last li that has progress
 						nextBacktrack.removeClass('done');
-						//if this isn't the current step
+						//if the last progress li is NOT the current step
 						if(!nextBacktrack.hasClass('current')){
 							//remove the progress from this step
 							nextBacktrack.addClass('back-track');
@@ -197,23 +235,11 @@ jQuery(document).ready(function(s){
 								backStep(stopBeforeLi);
 							},animDelay);
 						}else{
-							/*//this is the current step...
-							//if there is a partial width to update
-							var progBar=getProgBarIfNeedUpdate(nextBacktrack,progPercent);
-							if(progBar!=undefined){
-								//update the percentage width
-								progBar.css('width',progPercent+'%');
-							}*/
+							//finally have backtracked to the current step...
 							
-							//***
-							
+							//handle the final partial / whole-step backtrack within the current step
 							backPartStep(stopBeforeLi);
 						}
-
-					}else{
-						/*//the last progress li shows the arrow
-						stopBeforeLi.prev('li:first').removeClass('done');
-						stepsUl.removeClass('animation');*/
 					}
 				};
 				var forewardPartStep=function(currentLi){
@@ -233,12 +259,22 @@ jQuery(document).ready(function(s){
 						setTimeout(function(){
 							//indicate the animation finished
 							stepsUl.removeClass('animation');
+							//if did NOT have to re-align again (catch up with quick-scrolling)
+							if(!stepsUl.alignProgressBarWithScroll()){
+								//indicate the animation is caught up with quick-scrolling
+								stepsUl.addClass('ready');
+							}
 						},animDelay);
 					}else{
 						//show the previous step's arrow (show arrow = NOT done)
 						currentLi.prev('li:first').removeClass('done');
 						//indicate the animation finished
 						stepsUl.removeClass('animation');
+						//if did NOT have to re-align again (catch up with quick-scrolling)
+						if(!stepsUl.alignProgressBarWithScroll()){
+							//indicate the animation is caught up with quick-scrolling
+							stepsUl.addClass('ready');
+						}
 					}
 					return movePartStep;
 				};
@@ -292,11 +328,17 @@ jQuery(document).ready(function(s){
 				};
 				//get current li step
 				var clickedStepElem=stepElems.filter(':eq('+(stepNum-1)+')');
+				//if NO step is the current step yet (eg, on initial page load)
+				if(stepElems.filter('.current').length<1){
+					//add current class to the first step
+					stepElems.filter(':eq(0)').addClass('current');
+				}
 				//get the progress bar of the current step IF the bar needs to be updated
 				var clickedBarElem=getProgBarIfNeedUpdate(clickedStepElem,progPercent);
 				//if this step is NOT already set as current OR it's progress bar needs updating
 				if(!clickedStepElem.hasClass('current') || clickedBarElem!=undefined){
 					//starting step slider animation
+					stepsUl.removeClass('ready');
 					stepsUl.addClass('animation');
 					//if this step is NOT already set as current
 					if(!clickedStepElem.hasClass('current')){
@@ -304,8 +346,6 @@ jQuery(document).ready(function(s){
 						stepElems.removeClass('current');
 						//add the current class
 						clickedStepElem.addClass('current');
-						//get the last step to have progress
-						var lastProgressElem=stepElems.filter('.progress:last');
 						//if not on the first step
 						if(stepNum>1){
 							//if the current step already has progress to backtrack from
@@ -325,6 +365,11 @@ jQuery(document).ready(function(s){
 								backStep(clickedStepElem);
 							}else{
 								stepsUl.removeClass('animation');
+								//if did NOT have to re-align again (catch up with quick-scrolling)
+								if(!stepsUl.alignProgressBarWithScroll()){
+									//indicate the animation is caught up with quick-scrolling
+									stepsUl.addClass('ready');
+								}
 							}
 						}
 						
@@ -463,6 +508,7 @@ jQuery(document).ready(function(s){
 			};
 			var realign_timeout;
 			var alignProgressBarWithScroll=function(){
+				var hadToRealign=false;
 				//if the progress bar is NOT already aligned
 				if(!progressBarIsAligned()){
 					//if scrolling animation is NOT already in progress
@@ -473,33 +519,19 @@ jQuery(document).ready(function(s){
 							progPercent=getCurrentStepPercent();
 							//get the two anchors closest to the hud's bottom edge; one below and one above this edge
 							var anchors=getPrevAndNextAnchors();
-							//move up to the next anchor
-							if(anchors.next!=undefined){
-								setProgressBarStep(anchors.next.attr('name'),progPercent); 
-							}else{
-								//move up to the prev anchor
-								if(anchors.prev!=undefined){
-									setProgressBarStep(anchors.prev.attr('name'),progPercent);
-								}
-							}
-							//if the progress bar is NOT already aligned
-							if(!progressBarIsAligned()){
-								//get the longer animation duration time (scroll animation or progress bar animation)
-								var longerDelay=scrollAnimDelay;
-								if(animDelay>longerDelay){longerDelay=animDelay;}
-								//recursively check the alignment again to catch up with quick-scrolling
-								clearTimeout(realign_timeout);
-								realign_timeout = setTimeout(function(){
-									//recursively align, if necessary (user scrolled while the previous animation was still running)
-									alignProgressBarWithScroll();
-								},longerDelay+100);
-							}
+							//move progress bar to the correct position
+							hadToRealign=true;
+							setProgressBarStep(anchors.next.attr('name'),progPercent); 
 						}
 					}else{
 						//scroll animation already in progress.../
 					}
 				}
+				return hadToRealign;
 			};
+			//tie the alignment function to the ul wrap for easy access
+			stepsUl['alignProgressBarWithScroll']=alignProgressBarWithScroll;
+			//handle window scrolling
 			var scroll_timeout;
 			jQuery(window).scroll(function(){
 				//wait for scroll end
