@@ -155,8 +155,6 @@ jQuery(document).ready(function(s){
 					var progBar=getProgBarIfNeedUpdate(currentLi,progPercent);
 					if(progBar!=undefined){
 						movePartStep=true;
-						//the after step MUST be done (hide arrow)
-						currentLi.next('li:first').addClass('done');
 						//set the partial progress width
 						progBar.css('width',progPercent+'%');
 						//show the arrow in the current li (show arrow = NOT done)
@@ -164,6 +162,16 @@ jQuery(document).ready(function(s){
 						currentLi.addClass('progress');
 						//give time for the animation to finish
 						setTimeout(function(){
+							//if progPercent is zero
+							if(progPercent<1){
+								//if the current step is the first step
+								if(currentLi.prev('li:first').length<1){
+									//remove the progress on the current step
+									currentLi.removeClass('progress');
+									//remove the progress width
+									progBar.css('width','');
+								}
+							}
 							//indicate the animation finished
 							stepsUl.removeClass('animation');
 							//if did NOT have to re-align again (catch up with quick-scrolling)
@@ -403,7 +411,7 @@ jQuery(document).ready(function(s){
 	  			targetElem = jQuery('.anchor[name=' + target +']:first');
 	  		}
 	  		//if there is an <a> element for this #target
-	  		if (targetElem.length) {
+	  		if (targetElem.length) {	  			
 				//MOVE THE PAGE SCROLLBAR TO THE CORRECT STEP
 				//if moving the scrollbar
 				if(moveScrollbar){
@@ -414,11 +422,20 @@ jQuery(document).ready(function(s){
 						jQuery('html,body#body').animate({
 		          			scrollTop: targetElem.offset().top
 		        		}, scrollAnimDelay, function(){
+		        			//after the scroll animation completes...
 		        			stepsUl.removeClass('scrolling');
+				  			//check if the horizontal nav progress bar needs to be update... 
+				  			//and update if needed
+				  			if(stepsUl.alignProgressBarWithScroll){
+				  				stepsUl.alignProgressBarWithScroll();}
 		        		});
 		        	}else{
 		        		//just move, don't animate scrollbar
 		        		jQuery('html,body').scrollTop(targetElem.offset().top);
+			  			//check if the horizontal nav progress bar needs to be update... 
+			  			//and update if needed
+			  			if(stepsUl.alignProgressBarWithScroll){
+			  				stepsUl.alignProgressBarWithScroll();}
 		        	}
 	        	}
 	        }
@@ -497,9 +514,16 @@ jQuery(document).ready(function(s){
 						//if there is a nextNavItem
 						if(nextNavItem!=undefined){
 							var progBar=getProgBarIfNeedUpdate(nextNavItem);
-							//if the progress bar width differs from the percentage
+							//if the current progress bar width differs from the current percentage
 							if(progBar!=undefined){
 								isAligned=false;
+							}else{
+								//if there are any partial percentages on any other non-current bar
+								var nonCurrentItems=stepElems.not(nextNavItem);
+								var nonCurrentBars=nonCurrentItems.children('.bar[style*="width:"]');
+								if(nonCurrentBars.length>0){
+									isAligned=false;
+								}
 							}
 						}
 					}
