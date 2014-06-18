@@ -81,7 +81,7 @@
                 //print step html
                 $html.='<div class="step-wrap level'.$levelCount.'">';
                 $html.='<a class="anchor level'.$levelCount.'" name="'.$anchorStr.$_stepNum.'"></a>';
-                $html.='<h1 class="step-title">'.$_step['title'].'</h1>';
+                $html.='<h'.$levelCount.' class="step-title">'.$_step['title'].'</h'.$levelCount.'>';
                 $html.='<div class="step-body">';
                 //***
                 //recursive... get sub-steps
