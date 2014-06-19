@@ -9,6 +9,9 @@
             case 'walkthrough.xml':
                 $str='walkthrough.xml';
                 break;
+            case 'canvas_root':
+                $str='canvas/';
+                break;
         }
         return $str;
     }
@@ -157,10 +160,38 @@
                                             }
                                             //if found <path> 
                                             if($path!=''){
+                                                //get just the file name without the path
+                                                $file=$path;
+                                                if(strrpos($file, '/')!==false){
+                                                    $file=substr($file, strrpos($file, '/')+1);
+                                                }
+                                                //get just the root without the file
+                                                $root=$path;
+                                                if(strrpos($root, '/')!==false){
+                                                    $root=substr($root, 0, strrpos($root, '/')+1);
+                                                }else{$root='/';}
+                                                //get the file url...
+                                                $url=$path;
+                                                //if source path starts at the root
+                                                if(strpos($path, '/')===0){
+                                                    //add domain to the front of url
+                                                    $url = current_domain().substr($url, 1);
+                                                }else{
+                                                    //source path is relative to current $dirName...
+                                                    //add full absolute path to walkthrough source
+                                                    $url = current_domain().str('walk-through').'/{dirName}/'.$url;
+                                                }
+                                                //get the url without the domain
+                                                $rel_url=$url;
+                                                $rel_url=substr($rel_url, strlen(current_domain()));
                                                 //add the script values
                                                 $val[$sId] = array(
                                                     'id'=>$sId,
                                                     'path'=>$path,
+                                                    'root'=>$root,
+                                                    'file'=>$file,
+                                                    'url'=>$url,
+                                                    'rel_url'=>'/'.$rel_url,
                                                     'summary'=>$summary
                                                 );
                                             }
@@ -329,22 +360,21 @@
             $doc=getWalkthroughDoc($dirName);
             //if the walkthrough xml file exists
             if($doc){
+                //get newline from buffer
+                ob_start();?>
+
+<?php
+                $newLine=ob_get_clean();
                 //get the array of scripts
                 $scripts=getWalkthroughVal($doc,'scripts');
                 //for each script 
                 foreach($scripts as $script){
-                    $src = $script['path'];
-                    //if source path starts at the root
-                    if(strpos($src, '/')===0){
-                        //add domain to the front of src path
-                        $src = current_domain().substr($src, 1);
-                    }else{
-                        //source path is relative to current $dirName...
-                        //add full absolute path to walkthrough source
-                        $src = current_domain().str('walk-through').'/'.$dirName.'/'.$src;
-                    }
+                    //get the url of the script
+                    $src = $script['rel_url'];
+                    $src = str_replace('{dirName}', $dirName, $src);
+                    //put the html together
                     $html .= '<script id="sid_'.$script['id']
-                        .'" type="text/javascript" src="'.$src.'"></script>';
+                        .'" type="text/javascript" src="'.$src.'"></script> '.$newLine;
                 }
             }else{
                 $html .= '<!-- No walkthrough scripts found; no "'.str('walkthrough.xml').'" in this directory, "'.$dirName.'". -->';
@@ -353,6 +383,37 @@
             $html .= '<!-- No walkthrough scripts found; no $dirName specified. -->';
         }
         return $html;
+    }
+
+    function getScriptFoldersAsKey($scripts,$dirName=false){
+        $folderArray=array();
+        if($scripts){
+            if(is_array($scripts)){
+                //get the current directory name, by default
+                if(!$dirName){$dirName=basename(getcwd());}
+                //for each script 
+                foreach($scripts as $script){
+                    $root = $script['root'];
+                    //if source root folder doesn't start at the site root
+                    if(strpos($root, '/')===0){
+                        //remove the starting /
+                        $root = substr($root, 1);
+                    }else{
+                        //path is relative to current $dirName...
+                        //add the root directory to the front of $root
+                        $root = str('walk-through').'/'.$dirName.'/'.$root;
+                    }
+                    //if the array of folders doesn't already contain this directory key
+                    if(!array_key_exists($root, $folderArray)){
+                        //add this directory key
+                        $folderArray[$root]=array();
+                    }
+                    //add this file name to the parent directory key
+                    array_push($folderArray[$root],$script);
+                }
+            }
+        }
+        return $folderArray;
     }
 
 ?>

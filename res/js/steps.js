@@ -467,7 +467,7 @@ jQuery(document).ready(function(s){
 				//window height
 				var viewHeight = window.outerHeight;
 				//if there is a step wrap in the body
-				var lastWrap=jQuery('#body > .step-wrap:last');
+				var lastWrap=jQuery('#body .step-wrap.level1:last');
 				if(lastWrap.length>0){
 					//set the min height of last element so that the anchor scrolling can scroll to each item 
 					lastWrap.css('min-height',viewHeight+'px');
